@@ -24,7 +24,6 @@ class AirQualityData(db.Model):
     pm1 = db.Column(db.Float, nullable=False)
     pm25 = db.Column(db.Float, nullable=False)
     pm10 = db.Column(db.Float, nullable=False)
-    aqi = db.Column(db.Float, nullable=False)
     pressure = db.Column(db.Float, nullable=False)
     humidity = db.Column(db.Float, nullable=False)
     temperature = db.Column(db.Float, nullable=False)
