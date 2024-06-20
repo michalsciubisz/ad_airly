@@ -1,4 +1,5 @@
 amqp==5.2.0
+APScheduler==3.10.4
 asttokens==2.4.1
 billiard==4.2.0
 blinker==1.8.2
@@ -36,9 +37,11 @@ parso==0.8.4
 platformdirs==4.2.2
 prompt_toolkit==3.0.47
 psutil==6.0.0
+psycopg2==2.9.9
 pure-eval==0.2.2
 Pygments==2.18.0
 python-dateutil==2.9.0.post0
+pytz==2024.1
 pywin32==306
 pyzmq==26.0.3
 requests==2.32.3
@@ -49,6 +52,7 @@ tornado==6.4.1
 traitlets==5.14.3
 typing_extensions==4.12.2
 tzdata==2024.1
+tzlocal==5.2
 urllib3==2.2.2
 vine==5.1.0
 wcwidth==0.2.13
