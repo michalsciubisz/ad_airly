@@ -80,7 +80,7 @@ def fetch_airly_data(api_key, location_id):
 def start_scheduler(api_key, location_ids):
     scheduler = BackgroundScheduler()
     for location_id in location_ids:
-        scheduler.add_job(lambda: fetch_airly_data([api_key, location_id]), 'interval', hours=1)
+        scheduler.add_job(lambda: fetch_airly_data(api_key, location_id), 'interval', hours=1)
     scheduler.start()
 
     try:
