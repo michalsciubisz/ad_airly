@@ -27,7 +27,7 @@ def fetch_airly_data(api_key, location_id, Session):
 
             air_quality_data = data_measurements['current']['values']
             indexes_data = data_measurements['current']['indexes'][0]
-            timestamp = datetime.now() #Biore obecny bo to nie ma znaczenia
+            timestamp = datetime.now() # Biore obecny bo to nie ma znaczenia
 
             session = Session()
             location = session.query(Location).filter_by(id=location_id).first()
@@ -41,21 +41,22 @@ def fetch_airly_data(api_key, location_id, Session):
                         raise Exception(f"Non-200 status code: {response.status}")
                     data_location = json.load(response)
 
-                location_data = data_location['location']
-                address_data = data_location['address']
+                location_data = data_location.get('location', {})
+                address_data = data_location.get('address', {})
 
-                location = Location(
-                    id=data_location['id'],
-                    latitude=location_data['latitude'],
-                    longitude=location_data['longitude'],
-                    country=address_data['country'],
-                    city=address_data['city'],
-                    street=address_data['street'],
-                    number=address_data.get('number'), #.get radzi sobie z przypadkiem braku tej informacji, pozostałe są zawsze
-                    elevation=data_location['elevation'],
+                location = Location( # .get w przypadku braku danych 
+                id=data_location.get('id'),
+                latitude=location_data.get('latitude'),
+                longitude=location_data.get('longitude'),
+                country=address_data.get('country'),
+                city=address_data.get('city'),
+                street=address_data.get('street'),
+                number=address_data.get('number'),
+                elevation=data_location.get('elevation')
                 )
+
                 session.add(location)
-                session.commit() #Commit żeby mieć dostęp dalej
+                session.commit() # Commit żeby mieć dostęp dalej
 
             dust_measurement = DustMeasurements(
                 timestamp=timestamp,
@@ -74,7 +75,7 @@ def fetch_airly_data(api_key, location_id, Session):
                 location_id=location.id
             )
             session.add(gas_measurement)
-            session.commit() #Commit żeby dostać .id w aqi pomiarze
+            session.commit() # Commit żeby dostać .id w aqi pomiarze
             
             aqi_measurement = AQIIndicator(
                 index_name=indexes_data["name"],
@@ -89,7 +90,7 @@ def fetch_airly_data(api_key, location_id, Session):
             session.commit()
             print(f"Successfully fetched and saved data for locationId {location_id}")
 
-    except urllib.error.HTTPError as e: #Error ze złym id dla requestu
+    except urllib.error.HTTPError as e: # Error ze złym id dla requestu
         if e.code == 404:
             print(f"Location ID {location_id} not found: {e}")
         else:
@@ -135,12 +136,12 @@ def start_scheduler(api_key1, api_key2, location_ids):
             while True:
                 pass
         except (KeyboardInterrupt, SystemExit):
-            scheduler.shutdown()
+            scheduler.shutdown() # Cltr+c żeby zamknąć
 
 # Uruchomienie cyklicznego taska co godzinę -> można dodać podawanie listy kluczów API, wiadomo ale to później
 if __name__ == '__main__':
     # Tutaj lokalizacje (na razie 5, pytanie czy więcej)
-    locations = [37, 24, 8, 19, 45, 7493, 110935]  #[Gdańsk, Radom, Wrocław, Kraków, Olsztyn, Warszawa, Poznań]
+    locations = [37, 24, 8, 19, 45, 7493, 10]  #[Gdańsk, Radom, Wrocław, Kraków, Olsztyn, Warszawa, Bydgoszcz]
     # Klucze API
     api_key1 = 'Y7ib9CyZfvqgcPXxEnSUtRkps8TmSIOb'
     api_key2 = 'g63uAtG8BvMSGZh7WsbYfeUum5eHVCUW'
