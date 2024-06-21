@@ -3,8 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 #Do połączenia trzeba używać VPNa albo być w sieci AGH
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://michals1:ZDg8L4NMGhAVDkGV@mysql.agh.edu.pl:3306/michals1'
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:0000@localhost:5432/airly_test"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://michals1:ZDg8L4NMGhAVDkGV@mysql.agh.edu.pl:3306/michals1'
+# app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:0000@localhost:5432/airly_test"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
