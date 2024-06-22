@@ -108,7 +108,7 @@ def fetch_airly_data(api_key, location_id, Session):
             session.close()
 
 
-def start_scheduler(api_key1, api_key2, location_ids):
+def start_scheduler_api_change(api_key1, api_key2, location_ids):
     
     def determine_api_key():
         now = datetime.now()
@@ -138,12 +138,33 @@ def start_scheduler(api_key1, api_key2, location_ids):
         except (KeyboardInterrupt, SystemExit):
             scheduler.shutdown() # Cltr+c żeby zamknąć
 
+def start_scheduler(api_key, location_ids):
+
+    with app.app_context():
+        Session = sessionmaker(bind=db.engine)
+        scheduler = BackgroundScheduler()
+
+        for location_id in location_ids:
+            scheduler.add_job(lambda loc_id=location_id: fetch_airly_data(api_key, loc_id, Session), 'interval', hours=1)
+        scheduler.start()
+
+        try:
+            while True:
+                pass
+        except (KeyboardInterrupt, SystemExit):
+            scheduler.shutdown() # Cltr+c żeby zamknąć
+
 # Uruchomienie cyklicznego taska co godzinę -> można dodać podawanie listy kluczów API, wiadomo ale to później
 if __name__ == '__main__':
-    # Tutaj lokalizacje (na razie 5, pytanie czy więcej)
+    # Tutaj lokalizacje (na razie 7, pytanie czy więcej)
     locations = [37, 24, 8, 19, 45, 7493, 10]  #[Gdańsk, Radom, Wrocław, Kraków, Olsztyn, Warszawa, Bydgoszcz]
+
     # Klucze API
     api_key1 = 'Y7ib9CyZfvqgcPXxEnSUtRkps8TmSIOb'
     api_key2 = 'g63uAtG8BvMSGZh7WsbYfeUum5eHVCUW'
-    # Utworzenie taska
-    start_scheduler(api_key1, api_key2, location_ids=locations)
+
+    # Utworzenie taska -> dwa klucze API
+    # start_scheduler_api_change(api_key1, api_key2, location_ids=locations)
+
+    # Działanie na jednym kluczu
+    start_scheduler(api_key=api_key2, location_ids=locations)
