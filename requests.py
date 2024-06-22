@@ -162,6 +162,7 @@ if __name__ == '__main__':
     # Klucze API
     api_key1 = 'Y7ib9CyZfvqgcPXxEnSUtRkps8TmSIOb'
     api_key2 = 'g63uAtG8BvMSGZh7WsbYfeUum5eHVCUW'
+    api_key3 = 'kOyW1wzsQj2wvzyf6rxAiR2UHyBUqa55'
 
     # Utworzenie taska -> dwa klucze API
     # start_scheduler_api_change(api_key1, api_key2, location_ids=locations)
