@@ -168,4 +168,4 @@ if __name__ == '__main__':
     # start_scheduler_api_change(api_key1, api_key2, location_ids=locations)
 
     # Działanie na jednym kluczu
-    start_scheduler(api_key=api_key2, location_ids=locations)
+    start_scheduler(api_key=api_key3, location_ids=locations)
