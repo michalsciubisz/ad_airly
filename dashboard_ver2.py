@@ -8,11 +8,11 @@ from datetime import date, timedelta, datetime
 from database import app, db, DustMeasurements, GasMeasurements, AQIIndicator, Location
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-dash_app = dash.Dash(__name__, server=app, url_base_pathname='/dashboard/', external_stylesheets=external_stylesheets)
+dash_app = dash.Dash(__name__, server=app, url_base_pathname='/dashboard2/', external_stylesheets=external_stylesheets)
 
 # Zdefiniowanie rozłożenia wykresów
 dash_app.layout = html.Div([
-    html.H1('Air Quality Dashboards'),
+    html.H1('Air Quality Dashboards - version 2', style={'textAlign': 'center'}),
     
     # Interval component for periodic updates
     dcc.Interval(
@@ -34,7 +34,8 @@ dash_app.layout = html.Div([
                 {'label': 'Warszawa', 'value': 'Warszawa'},
                 {'label': 'Wrocław', 'value': 'Wrocław'}
             ],
-            value='Kraków'
+            value='Kraków',
+            multi=True
         )
     ]),
     html.Div(id='output_city'),
@@ -99,19 +100,18 @@ dash_app.layout = html.Div([
      Input('date-picker-range', 'end_date'),
      Input('city-dropdown', 'value')]
 )
-
-def update_output(n, start_date, end_date, city):
+def update_output(n, start_date, end_date, cities):
     if start_date and end_date:
         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         end_date_adjusted = end_date + timedelta(days=1) - timedelta(seconds=1)
-        graphs = update_graphs(city, start_date, end_date_adjusted)
+        graphs = update_graphs(cities, start_date, end_date_adjusted)
         return (
             graphs[0],  # pm10_graph
             graphs[1],  # pm25_graph
             graphs[2],  # co_graph
             graphs[3],  # no2_graph
             graphs[4],  # so2_graph
-            f'City selected: {city}',
+            f'Cities selected: {", ".join(cities)}',
             f'You have selected from {start_date} to {end_date}'
         )
     else:
@@ -122,82 +122,70 @@ def update_output(n, start_date, end_date, city):
             {},  # co_graph (empty figure or placeholder)
             {},  # no2_graph (empty figure or placeholder)
             {},  # so2_graph (empty figure or placeholder)
-            'Please select a city',  # output_city
+            'Please select cities',  # output_city
             'Please select a date range'  # output_date
         )
 
 # Function to update graphs
-def update_graphs(city, start_date, end_date):
+def update_graphs(cities, start_date, end_date):
+    figures = {'pm10': [], 'pm25': [], 'co': [], 'no2': [], 'so2': []}
 
-    location = Location.query.filter_by(city=city).first()
-    if not location:
-        return {}, {}, {}, {}, {}
-    loc_id= location.id
+    for city in cities:
+        location = Location.query.filter_by(city=city).first()
+        if not location:
+            continue
+        loc_id = location.id
 
-    # Example: Fetch data for PM10 and PM25 trends
-    pm_data = db.session.query(DustMeasurements.timestamp, DustMeasurements.pm10, DustMeasurements.pm25) \
-        .filter(DustMeasurements.location_id == loc_id) \
-        .filter(DustMeasurements.timestamp >= start_date) \
-        .filter(DustMeasurements.timestamp <= end_date) \
-        .group_by(DustMeasurements.timestamp) \
-        .order_by(DustMeasurements.timestamp.desc()) \
-        .all()
+        pm_data = db.session.query(DustMeasurements.timestamp, DustMeasurements.pm10, DustMeasurements.pm25) \
+            .filter(DustMeasurements.location_id == loc_id) \
+            .filter(DustMeasurements.timestamp >= start_date) \
+            .filter(DustMeasurements.timestamp <= end_date) \
+            .group_by(DustMeasurements.timestamp) \
+            .order_by(DustMeasurements.timestamp.desc()) \
+            .all()
+
+        figures['pm10'].append({'x': [entry.timestamp for entry in pm_data], 'y': [entry.pm10 for entry in pm_data], 'type': 'scatter', 'name': f'PM10 - {city}'})
+        figures['pm25'].append({'x': [entry.timestamp for entry in pm_data], 'y': [entry.pm25 for entry in pm_data], 'type': 'scatter', 'name': f'PM2.5 - {city}'})
+
+        gas_data = db.session.query(GasMeasurements.timestamp, GasMeasurements.co, GasMeasurements.no2, GasMeasurements.so2) \
+            .filter(GasMeasurements.location_id == loc_id) \
+            .filter(GasMeasurements.timestamp >= start_date) \
+            .filter(GasMeasurements.timestamp <= end_date) \
+            .group_by(GasMeasurements.timestamp) \
+            .order_by(GasMeasurements.timestamp.desc()) \
+            .all()
+
+        figures['co'].append({'x': [entry.timestamp for entry in gas_data], 'y': [entry.co for entry in gas_data], 'type': 'scatter', 'name': f'CO - {city}'})
+        figures['no2'].append({'x': [entry.timestamp for entry in gas_data], 'y': [entry.no2 for entry in gas_data], 'type': 'scatter', 'name': f'NO2 - {city}'})
+        figures['so2'].append({'x': [entry.timestamp for entry in gas_data], 'y': [entry.so2 for entry in gas_data], 'type': 'scatter', 'name': f'SO2 - {city}'})
 
     pm10_fig = {
-        'data': [
-            {'x': [entry.timestamp for entry in pm_data], 'y': [entry.pm10 for entry in pm_data], 'type': 'scatter', 'name': 'PM10'},
-        ],
-        'layout': {
-            'title': 'PM10 Trends'
-        }
+        'data': figures['pm10'],
+        'layout': {'title': 'PM10 Trends'}
     }
 
     pm25_fig = {
-        'data': [
-            {'x': [entry.timestamp for entry in pm_data], 'y': [entry.pm25 for entry in pm_data], 'type': 'scatter', 'name': 'PM2.5'},
-        ],
-        'layout': {
-            'title': 'PM25 Trends'
-        }
+        'data': figures['pm25'],
+        'layout': {'title': 'PM25 Trends'}
     }
 
-    # fetch data for measurments
-    gas_data = db.session.query(GasMeasurements.timestamp, GasMeasurements.co, GasMeasurements.no2, GasMeasurements.so2) \
-        .filter(GasMeasurements.location_id == loc_id) \
-        .filter(GasMeasurements.timestamp >= start_date) \
-        .filter(GasMeasurements.timestamp <= end_date) \
-        .group_by(GasMeasurements.timestamp) \
-        .order_by(GasMeasurements.timestamp.desc()) \
-        .all()
-
     co_fig = {
-        'data': [
-            {'x': [entry.timestamp for entry in gas_data], 'y': [entry.co for entry in gas_data], 'type': 'scatter', 'name': 'CO'},
-        ],
-        'layout': {
-            'title': 'CO Measurements'
-        }
+        'data': figures['co'],
+        'layout': {'title': 'CO Measurements'}
     }
 
     no2_fig = {
-        'data': [
-            {'x': [entry.timestamp for entry in gas_data], 'y': [entry.no2 for entry in gas_data], 'type': 'scatter', 'name': 'NO2'},
-        ],
-        'layout': {
-            'title': 'NO2 Measurements'
-        }
+        'data': figures['no2'],
+        'layout': {'title': 'NO2 Measurements'}
     }
 
     so2_fig = {
-        'data': [
-            {'x': [entry.timestamp for entry in gas_data], 'y': [entry.so2 for entry in gas_data], 'type': 'scatter', 'name': 'SO2'},
-        ],
-        'layout': {
-            'title': 'SO2 Measurements'
-        }
+        'data': figures['so2'],
+        'layout': {'title': 'SO2 Measurements'}
     }
 
     return pm10_fig, pm25_fig, co_fig, no2_fig, so2_fig
+
 
 if __name__ == '__main__':
     dash_app.run_server(debug=True)
