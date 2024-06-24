@@ -14,9 +14,7 @@ dash_app = dash.Dash(__name__, server=app, url_base_pathname='/contamination_map
 dash_app.layout = html.Div([
     html.H1('Air Contamination Map', style={'text-align': 'center'}),
 
-    # Relative container for the map and the date picker
     html.Div([
-        # Date picker with absolute positioning
         html.Div([
             dcc.DatePickerRange(
                 id='date-picker-range',
