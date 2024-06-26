@@ -3,9 +3,9 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 
 # Import your separate Dash apps
-from dashboard_ver1 import dash_app as dashboard1
-from dashboard_ver2 import dash_app as dashboard2
-from dashboard_ver3 import dash_app as dashboard3
+from dashboard_ver3 import dash_app as dashboard1
+from dashboard_ver2_W import dash_app as dashboard2
+from dashboard_map import dash_app as dashboard3
 
 # Main Dash app for navigationz
 app = dash.Dash(__name__)
