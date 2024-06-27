@@ -12,50 +12,72 @@ dash_app = dash.Dash(__name__, server=app, url_base_pathname='/contamination_map
 
 # Define the layout of the Dash app
 dash_app.layout = html.Div([
-    html.H1('Air Contamination Map', style={'text-align': 'center'}),
+    html.H1('Map Dashboard', style={'text-align': 'center', 'color': 'white'}),
 
     html.Div([
         html.Div([
             dcc.DatePickerRange(
                 id='date-picker-range',
                 start_date=date(2024, 6, 21),
-                end_date_placeholder_text='Select a date!'
+                end_date_placeholder_text='Select a date!',
+                style={'color': 'black'}
             ),
-            html.Div(id='output_date', style={'text-align': 'center', 'margin-bottom': '10px'})
-        ], style={'position': 'absolute', 'top': '90px', 'left': '50%', 'transform': 'translateX(-50%)', 'background-color': 'white', 'padding': '10px', 'border-radius': '5px', 'z-index': '1000'}),
+            html.Div(id='output_date', style={'width': '200px', 'height': '5px','text-align': 'center', 'margin-bottom': '5px', 'color': 'white'})
+        ], style={'position': 'absolute', 'top': '10px', 'left': '50%', 'transform': 'translateX(-50%)', 'background-color': 'white', 'padding': '20px', 'border-radius': '5px', 'z-index': '1000', 'margin-top': '1px'}),
 
-        # Centering the map container
         html.Div([
-            dl.Map(style={'width': '100%', 'height': '700px'}, center=[52, 19], zoom=6, children=[
+            dl.Map(style={'width': '1000px', 'height': '600px', 'border-radius': '20px', 'margin': '0 auto'}, center=[52, 19], zoom=6, children=[
                 dl.TileLayer(),
                 dl.LayerGroup(id='layer')
             ])
-        ], style={'position': 'relative', 'width': '100%', 'height': '600px'}),  # Relative positioning container for map
+        ], style={'position': 'relative', 'top':'20%', 'border-radius': '20px', 'width': '100%', 'height': '600px', 'text-align': 'center', 'margin-top': '40px'}),  # Centered positioning container for map
 
-    ]),  # Relative positioning container for map and date picker
+    ], style={'position': 'relative', 'border-radius': '20px', 'width': '100%', 'text-align': 'center', 'background-color': 'black', 'margin': 'auto', 'padding-top': '80px'}),  # Adjusted width and centering# Relative positioning container for map and date picker
 
-], style={'maxWidth': '1800px', 'margin': 'auto'})
+    html.Div([
+        dcc.Dropdown(
+            id='parameter-dropdown',
+            options=[
+                {'label': 'PM10', 'value': 'pm10'},
+                {'label': 'PM2.5', 'value': 'pm25'},
+                {'label': 'NO2', 'value': 'no2'},
+                {'label': 'O3', 'value': 'o3'},
+                {'label': 'SO2', 'value': 'so2'},
+                {'label': 'CO', 'value': 'co'}
+            ],
+            value='pm10',
+            style={'color': 'black'}
+        ),
+        html.Div(id='ranking-table', style={'text-align': 'center', 'color': 'white'})
+    ], style={'background-color': 'black', 'padding': '10px', 'border-radius': '40px', 'margin-top': '20px', 'width': '80%', 'margin': 'auto'})
+
+], style={'maxWidth': '1800px', 'margin': 'auto', 'border-radius': '20px', 'background-color': 'black', 'color': 'white'})
 
 @dash_app.callback(
     [Output('layer', 'children'),
-     Output('output_date', 'children')],
+     Output('output_date', 'children'),
+     Output('ranking-table', 'children')],
     [Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date')]
+     Input('date-picker-range', 'end_date'),
+     Input('parameter-dropdown', 'value')]
 )
-def update_output(start_date, end_date):
+def update_output(start_date, end_date, selected_parameter):
     if start_date and end_date:
         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         end_date_adjusted = end_date + timedelta(days=1) - timedelta(seconds=1)
         markers = update_map(start_date, end_date_adjusted)
+        ranking = update_ranking(start_date, end_date_adjusted, selected_parameter)
         return (
             markers,
-            f'You have selected from {start_date} to {end_date}'
+            f'You have selected from {start_date} to {end_date}',
+            ranking
         )
     else:
         return (
             [],
-            'Please select a date range'
+            'Please select a date range',
+            ''
         )
 
 # Function to update the map with markers
@@ -109,6 +131,45 @@ def update_map(start_date, end_date):
 
     return markers
 
+# Function to update ranking table
+def update_ranking(start_date, end_date, parameter):
+    locations = Location.query.all()
+    rankings = []
+
+    for location in locations:
+        loc_id = location.id
+
+        if parameter in ['pm10', 'pm25']:
+            data = db.session.query(DustMeasurements).filter(
+                DustMeasurements.location_id == loc_id,
+                DustMeasurements.timestamp >= start_date,
+                DustMeasurements.timestamp <= end_date
+            ).all()
+        else:
+            data = db.session.query(GasMeasurements).filter(
+                GasMeasurements.location_id == loc_id,
+                GasMeasurements.timestamp >= start_date,
+                GasMeasurements.timestamp <= end_date
+            ).all()
+
+        values = [getattr(measurement, parameter) for measurement in data if getattr(measurement, parameter) is not None]
+
+        if values:
+            avg = sum(values) / len(values)
+            rankings.append((location.city, avg))
+
+    rankings.sort(key=lambda x: x[1], reverse=True)
+
+    table_header = [
+        html.Thead(html.Tr([html.Th("Rank"), html.Th("City"), html.Th("Average Value")]))
+    ]
+    table_body = [
+        html.Tbody([html.Tr([html.Td(rank+1), html.Td(city), html.Td(f"{value:.2f}")]) for rank, (city, value) in enumerate(rankings)])
+    ]
+
+    table = html.Table(table_header + table_body, style={'width': '100%', 'color': 'white'})
+
+    return table
 
 if __name__ == '__main__':
     dash_app.run_server(debug=True)
