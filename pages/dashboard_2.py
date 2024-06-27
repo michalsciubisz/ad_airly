@@ -34,7 +34,7 @@ layout = html.Div([
                     {'label': 'Warszawa', 'value': 'Warszawa'},
                     {'label': 'Wrocław', 'value': 'Wrocław'}
                 ],
-                value='Kraków',
+                value='',
                 multi=True,
                 style={'min-width': '150px'}
             ),
