@@ -69,13 +69,13 @@ def update_output(start_date, end_date, selected_parameter):
         ranking = update_ranking(start_date, end_date_adjusted, selected_parameter)
         return (
             markers,
-            f'You have selected from {start_date} to {end_date}',
+            f' ',
             ranking
         )
     else:
         return (
             [],
-            'Please select a date range',
+            ' ',
             ''
         )
 
