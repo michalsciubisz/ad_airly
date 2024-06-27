@@ -48,12 +48,6 @@ Następnie należy uruchomić plik odpowiedzialny za dashboardy *switch.py*
 python switch.py
 ```
 
-### Tests
-
-## Map Dashboard:
-
-https://github.com/michalsciubisz/ad_airly/assets/144064944/5eb852eb-6452-41fc-a7e0-e7572b4eb7ac
-
 ### Linki
 
 [Mapa](https://airly.org/map/pl/) </br>
